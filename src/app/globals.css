@@ -1,0 +1,78 @@
+@import url('https://fonts.googleapis.com/css2?family=Mukta:wght@300;400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: #f8fafc;
+    --foreground: #0f172a;
+    --card: #ffffff;
+    --card-foreground: #0f172a;
+    --primary: #4f46e5;
+    --primary-foreground: #ffffff;
+    --muted: #f1f5f9;
+    --muted-foreground: #64748b;
+    --border: #e2e8f0;
+  }
+
+  .dark {
+    --background: #090d16;
+    --foreground: #f8fafc;
+    --card: #111827;
+    --card-foreground: #f8fafc;
+    --primary: #6366f1;
+    --primary-foreground: #ffffff;
+    --muted: #1e293b;
+    --muted-foreground: #94a3b8;
+    --border: #1f293d;
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  }
+}
+
+/* Custom font face for Preeti font if locally installed on user machine */
+@font-face {
+  font-family: 'Preeti';
+  src: local('Preeti'), local('preeti'), local('PREETI');
+  font-display: swap;
+}
+
+.font-preeti {
+  font-family: 'Preeti', 'Kantipur', sans-serif;
+}
+
+.font-devanagari {
+  font-family: 'Noto Sans Devanagari', 'Mukta', 'Kalimati', sans-serif;
+}
+
+/* Custom scrollbars for text areas */
+textarea::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+textarea::-webkit-scrollbar-track {
+  background: transparent;
+}
+textarea::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.4);
+  border-radius: 4px;
+}
+textarea::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.6);
+}
+
+/* Keyboard styling */
+.kbd-key {
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.15);
+  transition: all 0.1s ease;
+}
+.kbd-key:active {
+  transform: translateY(2px);
+  box-shadow: 0 0 0 rgba(0, 0, 0, 0.15);
+}
