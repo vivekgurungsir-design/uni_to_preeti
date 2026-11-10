@@ -1,26 +1,23 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import {
   ArrowLeftRight,
   Copy,
-  Check,
   Trash2,
   Download,
-  Share2,
   BookmarkPlus,
   BookmarkCheck,
   Sparkles,
   Maximize2,
   Minimize2,
-  Eye,
-  Type,
   Flag,
   ClipboardPaste,
-  FileText,
-  FileCode,
-  Sliders,
   CheckCircle2,
+  Zap,
+  Layers,
+  Code,
+  Type,
 } from "lucide-react";
 import {
   convertUnicodeToPreeti,
@@ -32,6 +29,7 @@ import {
 import { saveTranslation } from "@/lib/supabase";
 import { SavedTranslation } from "@/types/database";
 import { downloadAsDocx, downloadAsTxt } from "@/lib/document-processor";
+import { romanizedToUnicode } from "@/lib/romanized-to-unicode";
 
 interface TranslatorPaneProps {
   onOpenVirtualKeyboard: () => void;
@@ -51,11 +49,14 @@ export default function TranslatorPane({
   const [sourceText, setSourceText] = useState("");
   const [convertedText, setConvertedText] = useState("");
   const [mode, setMode] = useState<"unicode-to-preeti" | "preeti-to-unicode">("unicode-to-preeti");
-  const [autoDetect, setAutoDetect] = useState(true);
+  const [autoDetect, setAutoDetect] = useState(false);
+  const [romanizedTyping, setRomanizedTyping] = useState(false);
 
-  // Font and display mode for output
+  // Output display view: 'preeti-font' (visual Devanagari) vs 'raw-ascii' (g]kfn)
+  const [outputTab, setOutputTab] = useState<"visual" | "raw">("visual");
+
+  // Styling & view controls
   const [fontSize, setFontSize] = useState<number>(18);
-  const [outputDisplayMode, setOutputDisplayMode] = useState<"preeti-font" | "raw-ascii">("preeti-font");
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   // Saving states
@@ -66,7 +67,6 @@ export default function TranslatorPane({
   // Toast feedback state
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Sample texts for 1-click test
   const sampleTexts = [
     {
       label: "नेपालको संविधान",
@@ -83,11 +83,6 @@ export default function TranslatorPane({
       text: 'g]kfn Ps ;\'Gb/ / zflGtk"0f{ b]z xf] . oxfF ;+;f/s} ;a}eGbf cUnf] lzv/ ;u/dfyf /x]sf] 5 .',
       targetMode: "preeti-to-unicode" as const,
     },
-    {
-      label: "सरकारी निवेदन",
-      text: "श्रीमान् प्रमुख प्रशासकीय अधिकृतज्यू, विषय: नागरिकता प्रमाणपत्र सिफारिस पाउँ बारे । महोदय, उपरोक्त सम्बन्धमा म निवेदक...",
-      targetMode: "unicode-to-preeti" as const,
-    },
   ];
 
   const showToast = (msg: string) => {
@@ -95,43 +90,76 @@ export default function TranslatorPane({
     setTimeout(() => setToastMessage(null), 2500);
   };
 
-  // React to injected text
+  /**
+   * Synchronous, instant conversion helper
+   */
+  const performConversion = (text: string, currentMode: "unicode-to-preeti" | "preeti-to-unicode") => {
+    if (!text || text.trim().length === 0) {
+      return "";
+    }
+    if (currentMode === "unicode-to-preeti") {
+      return convertUnicodeToPreeti(text);
+    } else {
+      return convertPreetiToUnicode(text);
+    }
+  };
+
+  /**
+   * Realtime keystroke handler
+   */
+  const handleSourceChange = (val: string) => {
+    let processedVal = val;
+    // Optional Romanized live transliteration if active in Unicode mode
+    if (romanizedTyping && mode === "unicode-to-preeti" && val.endsWith(" ")) {
+      processedVal = romanizedToUnicode(val);
+    }
+
+    setSourceText(processedVal);
+    const converted = performConversion(processedVal, mode);
+    setConvertedText(converted);
+  };
+
+  // React to external injected text (virtual keyboard, cheat sheet, snippets)
   useEffect(() => {
     if (injectedText !== undefined && injectedText !== null) {
-      setSourceText((prev) => prev + injectedText);
+      setSourceText((prev) => {
+        const next = prev + injectedText;
+        const converted = performConversion(next, mode);
+        setConvertedText(converted);
+        return next;
+      });
     }
-  }, [injectedText]);
-
-  // Conversion engine
-  useEffect(() => {
-    if (!sourceText) {
-      setConvertedText("");
-      return;
-    }
-
-    let activeMode = mode;
-    if (autoDetect) {
-      const detected = detectTextType(sourceText);
-      if (detected !== mode) {
-        setMode(detected);
-        activeMode = detected;
-      }
-    }
-
-    if (activeMode === "unicode-to-preeti") {
-      setConvertedText(convertUnicodeToPreeti(sourceText));
-    } else {
-      setConvertedText(convertPreetiToUnicode(sourceText));
-    }
-  }, [sourceText, mode, autoDetect]);
+  }, [injectedText, mode]);
 
   // Direction swap
   const handleSwapDirections = () => {
-    setAutoDetect(false);
     const newMode = mode === "unicode-to-preeti" ? "preeti-to-unicode" : "unicode-to-preeti";
     setMode(newMode);
-    setSourceText(convertedText);
-    showToast("रूपान्तरण दिशा उल्ट्याइयो (Directions Swapped)");
+    const newSource = convertedText;
+    setSourceText(newSource);
+    const newConverted = performConversion(newSource, newMode);
+    setConvertedText(newConverted);
+    showToast("दिशा परिवर्तन गरियो (Directions Swapped)");
+  };
+
+  // Trigger auto detect explicitly
+  const handleAutoDetectClick = () => {
+    if (!sourceText) {
+      setAutoDetect(!autoDetect);
+      return;
+    }
+    const detected = detectTextType(sourceText);
+    setMode(detected);
+    const converted = performConversion(sourceText, detected);
+    setConvertedText(converted);
+    showToast(`पहिचान: ${detected === "unicode-to-preeti" ? "Unicode → Preeti" : "Preeti → Unicode"}`);
+  };
+
+  // Mode button click
+  const handleModeChange = (targetMode: "unicode-to-preeti" | "preeti-to-unicode") => {
+    setMode(targetMode);
+    const converted = performConversion(sourceText, targetMode);
+    setConvertedText(converted);
   };
 
   // Copy output
@@ -146,7 +174,9 @@ export default function TranslatorPane({
     try {
       const clipText = await navigator.clipboard.readText();
       setSourceText(clipText);
-      showToast("क्लिपबोर्डबाट टाँसियो (Pasted from Clipboard)");
+      const converted = performConversion(clipText, mode);
+      setConvertedText(converted);
+      showToast("क्लिपबोर्डबाट टाँसियो र रूपान्तरण भयो!");
     } catch {
       alert("कृपया पाठ सिधै इनपुट बाकसमा टाँस्नुहोस् (Ctrl+V)");
     }
@@ -156,13 +186,16 @@ export default function TranslatorPane({
   const handleClear = () => {
     setSourceText("");
     setConvertedText("");
-    showToast("सबै खाली गरियो (Cleared)");
+    showToast("खाली गरियो (Cleared)");
   };
 
   // Clean text helper
   const handleClean = () => {
-    setSourceText((prev) => cleanNepaliText(prev));
-    showToast("खाली ठाउँ र ढाँचा मिलाइयो (Cleaned & Normalized)");
+    const cleaned = cleanNepaliText(sourceText);
+    setSourceText(cleaned);
+    const converted = performConversion(cleaned, mode);
+    setConvertedText(converted);
+    showToast("पाठ सफा र व्यवस्थित गरियो");
   };
 
   // Download converted text as .docx file
@@ -203,7 +236,7 @@ export default function TranslatorPane({
     setSaveTitle("");
     setSaveTags("");
     onSnippetSaved();
-    showToast("क्लाउडमा सफलतापूर्वक सुरक्षित भयो (Saved to Cloud)!");
+    showToast("क्लाउडमा सफलतापूर्वक सुरक्षित भयो!");
   };
 
   const sourceStats = calculateStats(sourceText);
@@ -214,7 +247,7 @@ export default function TranslatorPane({
       className={`w-full transition-all ${
         isFullscreen
           ? "fixed inset-0 z-50 bg-slate-50 dark:bg-slate-950 p-6 overflow-y-auto"
-          : "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6"
+          : "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6"
       }`}
     >
       {/* Toast Notification */}
@@ -226,31 +259,25 @@ export default function TranslatorPane({
       )}
 
       {/* Main Mode Toolbar & Direction Selector */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl p-3.5 rounded-3xl border border-slate-200/80 dark:border-slate-800/80 shadow-md">
-        {/* Direction Selector Group */}
-        <div className="flex items-center space-x-2">
-          <div className="flex p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl text-xs sm:text-sm font-semibold">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl p-3 sm:p-4 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-md">
+        {/* Direction Switcher */}
+        <div className="flex items-center flex-wrap gap-2">
+          <div className="flex p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl text-xs sm:text-sm font-bold shadow-inner">
             <button
-              onClick={() => {
-                setAutoDetect(false);
-                setMode("unicode-to-preeti");
-              }}
+              onClick={() => handleModeChange("unicode-to-preeti")}
               className={`px-4 py-2 rounded-xl transition-all ${
-                mode === "unicode-to-preeti" && !autoDetect
-                  ? "bg-indigo-600 text-white shadow-sm font-bold"
+                mode === "unicode-to-preeti"
+                  ? "bg-indigo-600 text-white shadow-md font-bold"
                   : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
               युनिकोड → प्रिती (Unicode to Preeti)
             </button>
             <button
-              onClick={() => {
-                setAutoDetect(false);
-                setMode("preeti-to-unicode");
-              }}
+              onClick={() => handleModeChange("preeti-to-unicode")}
               className={`px-4 py-2 rounded-xl transition-all ${
-                mode === "preeti-to-unicode" && !autoDetect
-                  ? "bg-indigo-600 text-white shadow-sm font-bold"
+                mode === "preeti-to-unicode"
+                  ? "bg-indigo-600 text-white shadow-md font-bold"
                   : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
@@ -267,34 +294,44 @@ export default function TranslatorPane({
             <ArrowLeftRight className="w-4 h-4" />
           </button>
 
-          {/* Auto Detect Switch */}
-          <button
-            onClick={() => {
-              setAutoDetect(!autoDetect);
-              showToast(
-                autoDetect ? "स्वचालित पहिचान बन्द (Auto-detect OFF)" : "स्वचालित पहिचान चालु (Auto-detect ON)"
-              );
-            }}
-            className={`flex items-center space-x-1.5 px-3 py-2 rounded-2xl text-xs font-semibold transition border ${
-              autoDetect
-                ? "bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800 shadow-sm"
-                : "bg-transparent text-slate-400 border-slate-200 dark:border-slate-700"
-            }`}
-          >
-            <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
-            <span className="hidden sm:inline">स्वचालित पहिचान</span>
-            <span className="sm:hidden">Auto</span>
-          </button>
+          {/* Live Indicator Badge */}
+          <div className="flex items-center space-x-1.5 px-3 py-1.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/80 text-emerald-700 dark:text-emerald-300 text-xs font-semibold">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span>लाइभ रूपान्तरण सक्रिय (Real-time Live)</span>
+          </div>
         </div>
 
         {/* View & Utility Toolbar */}
         <div className="flex items-center space-x-2 text-xs">
+          {/* Romanized toggle */}
+          {mode === "unicode-to-preeti" && (
+            <button
+              onClick={() => {
+                setRomanizedTyping(!romanizedTyping);
+                showToast(
+                  !romanizedTyping
+                    ? "रोमनाइज्ड टाइपिङ चालु (nepal → नेपाल)"
+                    : "रोमनाइज्ड टाइपिङ बन्द"
+                );
+              }}
+              className={`flex items-center space-x-1.5 px-3 py-2 rounded-2xl font-semibold border transition ${
+                romanizedTyping
+                  ? "bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800 shadow-xs"
+                  : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700"
+              }`}
+              title="अंग्रेजीमा टाइप गर्दा नेपाली शब्द बन्ने (जस्तै: nepal लेख्दा नेपाल)"
+            >
+              <Type className="w-3.5 h-3.5" />
+              <span>रोमनाइज्ड टाइप</span>
+            </button>
+          )}
+
           {/* Clean text */}
           <button
             onClick={handleClean}
             disabled={!sourceText}
-            className="px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold disabled:opacity-40 transition"
-            title="खाली ठाउँ र विराम चिन्ह मिलाउनुहोस्"
+            className="px-3 py-2 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold disabled:opacity-40 transition"
+            title="खाली ठाउँ र ढाँचा मिलाउनुहोस्"
           >
             सफा गर्नुहोस्
           </button>
@@ -320,10 +357,10 @@ export default function TranslatorPane({
             </button>
           </div>
 
-          {/* Fullscreen Toggle */}
+          {/* Fullscreen */}
           <button
             onClick={() => setIsFullscreen(!isFullscreen)}
-            className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
+            className="p-2 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
             title={isFullscreen ? "Exit Fullscreen" : "Fullscreen Workspace"}
           >
             {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
@@ -341,49 +378,49 @@ export default function TranslatorPane({
           <button
             key={idx}
             onClick={() => {
-              setAutoDetect(false);
               setMode(item.targetMode);
               setSourceText(item.text);
-              showToast(`'${item.label}' लोड गरियो`);
+              const converted = performConversion(item.text, item.targetMode);
+              setConvertedText(converted);
+              showToast(`'${item.label}' लोड गरियो र रूपान्तरण भयो`);
             }}
-            className="px-3 py-1.5 rounded-full whitespace-nowrap bg-white dark:bg-slate-800/80 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 font-devanagari transition shadow-xs"
+            className="px-3 py-1.5 rounded-full whitespace-nowrap bg-white dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 font-devanagari transition shadow-xs"
           >
             {item.label}
           </button>
         ))}
       </div>
 
-      {/* Central Conversion Workspace: Two Equal Sized Editor Cards */}
+      {/* ================= DUAL-CARD CONVERSION WORKSPACE ================= */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        {/* ================= LEFT PANEL ================= */}
-        <div className="flex flex-col bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-xl overflow-hidden focus-within:border-indigo-500 dark:focus-within:border-indigo-500 transition-all">
-          {/* Left Panel Header */}
+        {/* ================= LEFT PANEL (SOURCE) ================= */}
+        <div className="flex flex-col bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden focus-within:border-indigo-500 dark:focus-within:border-indigo-500 transition-all">
+          {/* Header */}
           <div className="px-5 py-3.5 bg-slate-50/80 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <span className="font-extrabold text-sm text-slate-900 dark:text-white">
-                {mode === "unicode-to-preeti" ? "नेपाली युनिकोड (Unicode Input)" : "प्रिती फन्ट इनपुट (Preeti Input)"}
+                {mode === "unicode-to-preeti" ? "युनिकोड इनपुट (Unicode Input)" : "प्रिती इनपुट (Preeti Text)"}
               </span>
-              <span className="text-[11px] px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 font-semibold">
-                इनपुट
+              <span className="text-[11px] px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 font-bold">
+                इनपुट बाकस
               </span>
             </div>
 
-            {/* Panel Actions */}
             <div className="flex items-center space-x-1">
               <button
                 onClick={handlePaste}
-                className="flex items-center space-x-1 px-2.5 py-1.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-slate-700 text-xs font-semibold transition"
-                title="क्लिपबोर्डबाट टाँस्नुहोस् (Paste)"
+                className="flex items-center space-x-1 px-3 py-1.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-slate-700 text-xs font-semibold transition"
+                title="क्लिपबोर्डबाट टाँस्नुहोस्"
               >
                 <ClipboardPaste className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">पेस्ट</span>
+                <span>टाँस्नुहोस् (Paste)</span>
               </button>
 
               {sourceText && (
                 <button
                   onClick={handleClear}
                   className="p-1.5 rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
-                  title="सबै खाली गर्नुहोस् (Clear)"
+                  title="खाली गर्नुहोस्"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -391,15 +428,15 @@ export default function TranslatorPane({
             </div>
           </div>
 
-          {/* Left Editor Textarea */}
-          <div className="relative flex-1 min-h-[340px] sm:min-h-[420px]">
+          {/* Textarea */}
+          <div className="relative flex-1 min-h-[350px] sm:min-h-[440px]">
             <textarea
               value={sourceText}
-              onChange={(e) => setSourceText(e.target.value)}
+              onChange={(e) => handleSourceChange(e.target.value)}
               placeholder={
                 mode === "unicode-to-preeti"
-                  ? "यहाँ नेपाली युनिकोड टाइप गर्नुहोस्..."
-                  : "यहाँ Preeti Font मा लेखिएको टेक्स्ट टाइप वा पेस्ट गर्नुहोस्..."
+                  ? "यहाँ नेपाली युनिकोड टाइप गर्नुहोस् वा टाँस्नुहोस् (जस्तै: नेपाल मेरो देश हो)..."
+                  : "यहाँ Preeti Font मा लेखिएको टेक्स्ट टाइप वा पेस्ट गर्नुहोस् (जस्तै: g]kfn d]/f] b]z xf])..."
               }
               style={{ fontSize: `${fontSize}px` }}
               className={`w-full h-full p-5 bg-transparent text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none resize-none leading-relaxed ${
@@ -408,8 +445,8 @@ export default function TranslatorPane({
             />
           </div>
 
-          {/* Left Panel Footer Stats */}
-          <div className="px-5 py-2.5 bg-slate-50/80 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+          {/* Footer Stats & Virtual Keyboard Link */}
+          <div className="px-5 py-3 bg-slate-50/80 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
             <div className="flex items-center space-x-3">
               <span>वर्ण: <strong className="text-slate-800 dark:text-slate-200">{sourceStats.characters}</strong></span>
               <span>शब्द: <strong className="text-slate-800 dark:text-slate-200">{sourceStats.words}</strong></span>
@@ -419,59 +456,57 @@ export default function TranslatorPane({
               onClick={onOpenVirtualKeyboard}
               className="text-indigo-600 dark:text-indigo-400 hover:underline font-bold text-xs"
             >
-              + भर्चुअल किबोर्ड
+              + भर्चुअल किबोर्ड खोल्नुहोस्
             </button>
           </div>
         </div>
 
-        {/* ================= RIGHT PANEL ================= */}
-        <div className="flex flex-col bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-xl overflow-hidden focus-within:border-emerald-500 dark:focus-within:border-emerald-500 transition-all glow-indigo">
-          {/* Right Panel Header */}
+        {/* ================= RIGHT PANEL (OUTPUT) ================= */}
+        <div className="flex flex-col bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden focus-within:border-emerald-500 dark:focus-within:border-emerald-500 transition-all glow-indigo">
+          {/* Header */}
           <div className="px-5 py-3.5 bg-slate-50/80 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <span className="font-extrabold text-sm text-slate-900 dark:text-white">
                 {mode === "unicode-to-preeti" ? "Preeti Font नतिजा" : "नेपाली युनिकोड नतिजा"}
               </span>
 
-              {/* Preeti font rendering indicator badge */}
-              {mode === "unicode-to-preeti" && (
-                <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 font-bold flex items-center space-x-1">
-                  <span>Preeti.ttf सक्रिय</span>
-                </span>
-              )}
-            </div>
-
-            {/* Right Panel Font View Toggle & Actions */}
-            <div className="flex items-center space-x-1.5">
-              {/* If Preeti output, allow toggling between Preeti font visual rendering and Raw ASCII text */}
-              {mode === "unicode-to-preeti" && (
-                <div className="flex p-0.5 bg-slate-200 dark:bg-slate-800 rounded-xl text-[11px] font-semibold">
+              {/* View Tabs for Preeti Output: Visual Preeti Font vs Raw ASCII Code */}
+              {mode === "unicode-to-preeti" ? (
+                <div className="flex p-0.5 bg-slate-200 dark:bg-slate-800 rounded-xl text-[11px] font-bold">
                   <button
-                    onClick={() => setOutputDisplayMode("preeti-font")}
-                    className={`px-2 py-1 rounded-lg transition ${
-                      outputDisplayMode === "preeti-font"
-                        ? "bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-300 shadow-xs font-bold"
+                    onClick={() => setOutputTab("visual")}
+                    className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg transition ${
+                      outputTab === "visual"
+                        ? "bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-300 shadow-xs font-black"
                         : "text-slate-600 dark:text-slate-400"
                     }`}
                     title="Preeti.ttf फन्टमा नेपाली अक्षर हेर्नुहोस्"
                   >
-                    प्रिती फन्ट भ्यू
+                    <Layers className="w-3 h-3" />
+                    <span>प्रिती फन्ट (देखिने लिपि)</span>
                   </button>
                   <button
-                    onClick={() => setOutputDisplayMode("raw-ascii")}
-                    className={`px-2 py-1 rounded-lg transition ${
-                      outputDisplayMode === "raw-ascii"
-                        ? "bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-300 shadow-xs font-bold"
+                    onClick={() => setOutputTab("raw")}
+                    className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg transition ${
+                      outputTab === "raw"
+                        ? "bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-300 shadow-xs font-black"
                         : "text-slate-600 dark:text-slate-400"
                     }`}
                     title="कच्चा क्यारेक्टर कोड (ASCII: g]kfn) हेर्नुहोस्"
                   >
-                    ASCII कोड
+                    <Code className="w-3 h-3" />
+                    <span>ASCII कोड (g]kfn)</span>
                   </button>
                 </div>
+              ) : (
+                <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 font-bold">
+                  Unicode Devanagari
+                </span>
               )}
+            </div>
 
-              {/* Copy Button */}
+            {/* Actions */}
+            <div className="flex items-center space-x-1.5">
               <button
                 onClick={handleCopy}
                 disabled={!convertedText}
@@ -479,13 +514,13 @@ export default function TranslatorPane({
                 title="क्लिपबोर्डमा कपी गर्नुहोस्"
               >
                 <Copy className="w-3.5 h-3.5" />
-                <span>कपी</span>
+                <span>कपी (Copy)</span>
               </button>
             </div>
           </div>
 
-          {/* Right Editor Output Area */}
-          <div className="relative flex-1 min-h-[340px] sm:min-h-[420px]">
+          {/* Textarea Output Area */}
+          <div className="relative flex-1 min-h-[350px] sm:min-h-[440px]">
             <textarea
               readOnly
               value={convertedText}
@@ -497,7 +532,7 @@ export default function TranslatorPane({
               style={{ fontSize: `${fontSize}px` }}
               className={`w-full h-full p-5 bg-transparent text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none resize-none leading-relaxed select-all ${
                 mode === "unicode-to-preeti"
-                  ? outputDisplayMode === "preeti-font"
+                  ? outputTab === "visual"
                     ? "font-preeti text-lg"
                     : "font-mono"
                   : "font-devanagari"
@@ -505,19 +540,18 @@ export default function TranslatorPane({
             />
           </div>
 
-          {/* Right Panel Footer: Actions & Stats */}
-          <div className="px-5 py-2.5 bg-slate-50/80 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
+          {/* Footer Action Bar */}
+          <div className="px-5 py-3 bg-slate-50/80 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
             <div className="flex items-center space-x-3">
               <span>वर्ण: <strong className="text-slate-800 dark:text-slate-200">{targetStats.characters}</strong></span>
               <span>शब्द: <strong className="text-slate-800 dark:text-slate-200">{targetStats.words}</strong></span>
             </div>
 
-            {/* Download and Cloud Buttons */}
             <div className="flex items-center space-x-1.5">
               <button
                 onClick={handleDownloadTxt}
                 disabled={!convertedText}
-                className="flex items-center space-x-1 px-2.5 py-1 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 disabled:opacity-40 text-slate-700 dark:text-slate-200 font-semibold transition"
+                className="flex items-center space-x-1 px-2.5 py-1 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 disabled:opacity-40 text-slate-700 dark:text-slate-200 font-bold transition"
                 title="Text फाइल डाउनलोड (.txt)"
               >
                 <Download className="w-3 h-3" />
@@ -526,7 +560,7 @@ export default function TranslatorPane({
               <button
                 onClick={handleDownloadDocx}
                 disabled={!convertedText}
-                className="flex items-center space-x-1 px-2.5 py-1 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 disabled:opacity-40 font-semibold transition"
+                className="flex items-center space-x-1 px-2.5 py-1 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 disabled:opacity-40 font-bold transition"
                 title="Word डकुमेन्ट डाउनलोड (.docx)"
               >
                 <Download className="w-3 h-3" />

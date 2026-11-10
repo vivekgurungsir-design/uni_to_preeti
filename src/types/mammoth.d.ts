@@ -10,3 +10,4 @@ declare module "mammoth" {
   export function extractRawText(input: { arrayBuffer: ArrayBuffer }): Promise<RawTextResult>;
   export function convertToHtml(input: { arrayBuffer: ArrayBuffer }): Promise<HtmlResult>;
 }
+
