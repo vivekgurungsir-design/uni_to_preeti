@@ -2,7 +2,10 @@
 
 import React, { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
+import HeroSection from "@/components/HeroSection";
 import TranslatorPane from "@/components/TranslatorPane";
+import DocumentConverterSection from "@/components/DocumentConverterSection";
+import TypingPracticeSection from "@/components/TypingPracticeSection";
 import VirtualKeyboard from "@/components/VirtualKeyboard";
 import PreetiCheatSheetModal from "@/components/PreetiCheatSheetModal";
 import SavedSnippetsDrawer from "@/components/SavedSnippetsDrawer";
@@ -64,7 +67,6 @@ export default function Home() {
   // Keyboard character click
   const handleVirtualKeyPress = (char: string) => {
     setInjectedText(char);
-    // Reset after a brief tick so subsequent identical characters register
     setTimeout(() => setInjectedText(null), 50);
   };
 
@@ -78,6 +80,7 @@ export default function Home() {
   const handleLoadSnippet = (snippet: SavedTranslation) => {
     setInjectedText(snippet.source_text);
     setTimeout(() => setInjectedText(null), 50);
+    window.scrollTo({ top: 300, behavior: "smooth" });
   };
 
   // Delete snippet
@@ -112,7 +115,7 @@ export default function Home() {
   const handleLoadTestCase = (text: string) => {
     setInjectedText(text);
     setTimeout(() => setInjectedText(null), 50);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({ top: 300, behavior: "smooth" });
   };
 
   return (
@@ -128,19 +131,9 @@ export default function Home() {
         />
 
         {/* Hero Section */}
-        <section className="pt-8 pb-3 text-center max-w-4xl mx-auto px-4">
-          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 text-xs text-indigo-700 dark:text-indigo-300 font-medium mb-3">
-            <span>✨ उच्च शुद्धता, स्वचालित दिशा पहिचान र क्लाउड सिंक</span>
-          </div>
-          <h1 className="text-2xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-            नेपाली युनिकोड र प्रिती फन्ट अनुवादक
-          </h1>
-          <p className="mt-2 text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
-            युनिकोड (Unicode) बाट प्रिती (Preeti) वा प्रितीबाट युनिकोडमा तुरुन्तै वास्तविक समयमा रूपान्तरण गर्नुहोस्। सरकारी कामकाज, पत्रकारिता तथा डिजाइनको लागि १००% उपयोगी।
-          </p>
-        </section>
+        <HeroSection />
 
-        {/* Main Dual-Pane Translator */}
+        {/* Main Dual-Pane Converter Workspace */}
         <TranslatorPane
           onOpenVirtualKeyboard={() => setIsKeyboardOpen(true)}
           onOpenFeedback={handleOpenFeedback}
@@ -148,6 +141,12 @@ export default function Home() {
           onSnippetSaved={refreshSnippets}
           injectedText={injectedText}
         />
+
+        {/* Document Converter Section (.docx, .txt, .rtf) */}
+        <DocumentConverterSection />
+
+        {/* Live Nepali Typing Practice & Speed Test (WPM) */}
+        <TypingPracticeSection />
 
         {/* Accuracy Benchmark Suite */}
         <AccuracyVerifier onLoadTestCase={handleLoadTestCase} />

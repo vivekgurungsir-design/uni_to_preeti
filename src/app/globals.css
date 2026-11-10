@@ -1,8 +1,18 @@
-@import url('https://fonts.googleapis.com/css2?family=Mukta:wght@300;400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Mukta:wght@300;400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Official Preeti Font Face Definition */
+@font-face {
+  font-family: 'Preeti';
+  src: url('/fonts/preeti.ttf') format('truetype'),
+       local('Preeti'), local('preeti'), local('PREETI');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
 
 @layer base {
   :root {
@@ -36,43 +46,57 @@
   }
 }
 
-/* Custom font face for Preeti font if locally installed on user machine */
-@font-face {
-  font-family: 'Preeti';
-  src: local('Preeti'), local('preeti'), local('PREETI');
-  font-display: swap;
-}
-
 .font-preeti {
-  font-family: 'Preeti', 'Kantipur', sans-serif;
+  font-family: 'Preeti', 'Kantipur', sans-serif !important;
+  font-feature-settings: normal;
+  letter-spacing: 0.02em;
 }
 
 .font-devanagari {
   font-family: 'Noto Sans Devanagari', 'Mukta', 'Kalimati', sans-serif;
 }
 
-/* Custom scrollbars for text areas */
-textarea::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+/* Custom scrollbars */
+textarea::-webkit-scrollbar,
+div::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
 }
-textarea::-webkit-scrollbar-track {
+textarea::-webkit-scrollbar-track,
+div::-webkit-scrollbar-track {
   background: transparent;
 }
-textarea::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.4);
-  border-radius: 4px;
+textarea::-webkit-scrollbar-thumb,
+div::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.35);
+  border-radius: 6px;
 }
-textarea::-webkit-scrollbar-thumb:hover {
+textarea::-webkit-scrollbar-thumb:hover,
+div::-webkit-scrollbar-thumb:hover {
   background: rgba(148, 163, 184, 0.6);
+}
+
+/* Glassmorphism utilities */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+.dark .glass-panel {
+  background: rgba(15, 23, 42, 0.85);
 }
 
 /* Keyboard styling */
 .kbd-key {
-  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.08);
   transition: all 0.1s ease;
 }
 .kbd-key:active {
   transform: translateY(2px);
-  box-shadow: 0 0 0 rgba(0, 0, 0, 0.15);
+  box-shadow: 0 0 0 rgba(0, 0, 0, 0.08);
+}
+
+/* Subtle glow effects */
+.glow-indigo {
+  box-shadow: 0 0 35px -5px rgba(99, 102, 241, 0.15);
 }

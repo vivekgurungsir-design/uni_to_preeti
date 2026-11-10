@@ -241,3 +241,4 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-actual-anon-key`;
     </div>
   );
 }
+

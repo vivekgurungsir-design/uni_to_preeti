@@ -81,3 +81,4 @@ CREATE POLICY "Anyone can submit feedback"
 CREATE INDEX IF NOT EXISTS idx_saved_translations_user_id ON public.saved_translations(user_id);
 CREATE INDEX IF NOT EXISTS idx_saved_translations_is_public ON public.saved_translations(is_public);
 CREATE INDEX IF NOT EXISTS idx_saved_translations_created_at ON public.saved_translations(created_at DESC);
+

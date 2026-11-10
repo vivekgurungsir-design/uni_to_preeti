@@ -113,3 +113,4 @@ export default function ShareModal({ isOpen, onClose, snippet }: ShareModalProps
     </div>
   );
 }
+

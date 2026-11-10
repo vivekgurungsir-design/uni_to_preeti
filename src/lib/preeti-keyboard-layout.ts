@@ -165,3 +165,4 @@ export const PREETI_CHEATSHEET: CheatSheetEntry[] = [
   { category: "चिह्न (Symbols)", devanagari: "। (पूर्णविराम)", preetiKey: ".", englishKey: "." },
   { category: "चिह्न (Symbols)", devanagari: "रु (रुपैयाँ)", preetiKey: "?", englishKey: "Shift + /" },
 ];
+

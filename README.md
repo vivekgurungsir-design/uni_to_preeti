@@ -118,3 +118,4 @@ npm run start
 - **Icons**: [Lucide React](https://lucide.dev/)
 - **Database & Auth**: [Supabase](https://supabase.com/)
 - **Font Rendering**: Noto Sans Devanagari, Mukta, and Preeti font fallback
+
