@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
-import HeroSection from "@/components/HeroSection";
 import TranslatorPane from "@/components/TranslatorPane";
 import DocumentConverterSection from "@/components/DocumentConverterSection";
 import TypingPracticeSection from "@/components/TypingPracticeSection";
@@ -16,6 +15,7 @@ import AccuracyVerifier from "@/components/AccuracyVerifier";
 import Footer from "@/components/Footer";
 import { fetchSavedTranslations, deleteSavedTranslation, toggleFavoriteTranslation } from "@/lib/supabase";
 import { SavedTranslation } from "@/types/database";
+import { Sparkles } from "lucide-react";
 
 export default function Home() {
   // Modal visibility states
@@ -41,10 +41,9 @@ export default function Home() {
   // Saved snippets state
   const [savedSnippets, setSavedSnippets] = useState<SavedTranslation[]>([]);
 
-  // Text injection state (from virtual keyboard, cheatsheet, or saved snippet)
+  // Text injection state
   const [injectedText, setInjectedText] = useState<string | null>(null);
 
-  // Load saved translations on mount
   const refreshSnippets = async () => {
     const list = await fetchSavedTranslations();
     setSavedSnippets(list);
@@ -53,7 +52,6 @@ export default function Home() {
   useEffect(() => {
     refreshSnippets();
 
-    // Check if redirecting from /share/[id]
     if (typeof window !== "undefined") {
       const pendingText = sessionStorage.getItem("shared_load_text");
       if (pendingText) {
@@ -64,26 +62,22 @@ export default function Home() {
     }
   }, []);
 
-  // Keyboard character click
   const handleVirtualKeyPress = (char: string) => {
     setInjectedText(char);
     setTimeout(() => setInjectedText(null), 50);
   };
 
-  // Cheatsheet insert
   const handleCheatSheetInsert = (text: string) => {
     setInjectedText(text);
     setTimeout(() => setInjectedText(null), 50);
   };
 
-  // Load saved snippet into editor
   const handleLoadSnippet = (snippet: SavedTranslation) => {
     setInjectedText(snippet.source_text);
     setTimeout(() => setInjectedText(null), 50);
-    window.scrollTo({ top: 300, behavior: "smooth" });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // Delete snippet
   const handleDeleteSnippet = async (id: string) => {
     if (confirm("के तपाईं यो सुरक्षित अनुवाद मेटाउन निश्चित हुनुहुन्छ?")) {
       await deleteSavedTranslation(id);
@@ -91,13 +85,11 @@ export default function Home() {
     }
   };
 
-  // Toggle favorite
   const handleToggleFavorite = async (id: string, is_favorite: boolean) => {
     await toggleFavoriteTranslation(id, is_favorite);
     await refreshSnippets();
   };
 
-  // Open feedback modal
   const handleOpenFeedback = (
     orig: string,
     converted: string,
@@ -111,11 +103,10 @@ export default function Home() {
     });
   };
 
-  // Accuracy suite load
   const handleLoadTestCase = (text: string) => {
     setInjectedText(text);
     setTimeout(() => setInjectedText(null), 50);
-    window.scrollTo({ top: 300, behavior: "smooth" });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (
@@ -130,10 +121,21 @@ export default function Home() {
           savedCount={savedSnippets.length}
         />
 
-        {/* Hero Section */}
-        <HeroSection />
+        {/* Compact Header */}
+        <div className="pt-6 pb-2 text-center max-w-4xl mx-auto px-4">
+          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 text-xs text-indigo-700 dark:text-indigo-300 font-bold mb-2">
+            <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
+            <span>नेपाली युनिकोड र प्रिती फन्ट लाइभ अनुवादक</span>
+          </div>
+          <h1 className="text-2xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight font-devanagari">
+            Unicode ➔ Preeti तत्काल लाइभ रूपान्तरण
+          </h1>
+          <p className="mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+            बायाँ बाकसमा युनिकोड टाइप गर्नुहोस् वा टाँस्नुहोस्, दायाँ बाकसमा तुरुन्तै Preeti मा रूपान्तरण हुनेछ।
+          </p>
+        </div>
 
-        {/* Main Dual-Pane Converter Workspace */}
+        {/* PROMINENT LIVE CONVERTER (Right at the top) */}
         <TranslatorPane
           onOpenVirtualKeyboard={() => setIsKeyboardOpen(true)}
           onOpenFeedback={handleOpenFeedback}
@@ -142,7 +144,7 @@ export default function Home() {
           injectedText={injectedText}
         />
 
-        {/* Document Converter Section (.docx, .txt, .rtf) */}
+        {/* Document Converter Section (.docx, .txt) */}
         <DocumentConverterSection />
 
         {/* Live Nepali Typing Practice & Speed Test (WPM) */}
