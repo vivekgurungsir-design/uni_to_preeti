@@ -1,6 +1,5 @@
 /**
  * Bidirectional Preeti <-> Devanagari Unicode Converter
- * Accurately translates Nepali text between standard Devanagari Unicode and Preeti font format.
  */
 
 export interface ConversionStats {
@@ -17,18 +16,18 @@ export function calculateStats(text: string): ConversionStats {
   return { characters, words, lines };
 }
 
-// Unicode to Preeti Mapping Array
+// Ordered Unicode to Preeti Mapping Array
 export const unicodeToPreetiMap: [string, string][] = [
   // Compound conjuncts & special characters
   ["द्ध", "2"],
-  ["द्व", "}"],
-  ["द्य", "Þ"],
-  ["द्द", "å"],
-  ["द्म", "÷"],
-  ["ट्ट", "6\\6"],
-  ["ट्ठ", "6\\7"],
-  ["ड्ड", "8\\8"],
-  ["ड्ढ", "8\\9"],
+  ["द्व", "å"],
+  ["द्य", "B"],
+  ["द्द", "2"],
+  ["द्म", "ß"],
+  ["ट्ट", "§"],
+  ["ट्ठ", "Ý"],
+  ["ड्ड", "•"],
+  ["ठ्ठ", "¶"],
   ["श्च", "Zr"],
   ["श्न", "Zg"],
   ["श्व", "Zj"],
@@ -41,19 +40,19 @@ export const unicodeToPreetiMap: [string, string][] = [
   ["ह्ल", "xn"],
   ["ह्व", "xj"],
   ["श्र", ">"],
-  ["त्त", "Tt"],
+  ["त्त", "Q"],
   ["त्क", "Ts"],
-  ["क्ष्", "If\\"],
+  ["क्ष्", "I"],
   ["क्ष", "If"],
-  ["ज्ञ्", "1\\"],
+  ["ज्ञ्", "¡"],
   ["ज्ञ", "1"],
   ["त्र्", "q\\"],
   ["त्र", "q"],
   ["रु", "?"],
-  ["रू", 'r"'],
+  ["रू", "¿"],
 
   // Independent vowels
-  ["ॐ", "cf‘"],
+  ["ॐ", "ç"],
   ["ऋ", "C"],
   ["अौ", "cf}"],
   ["औ", "cf}"],
@@ -75,25 +74,26 @@ export const unicodeToPreetiMap: [string, string][] = [
   ["ी", "L"],
   ["ु", "'"],
   ["ू", '"'],
-  ["ृ", "]"],
+  ["ृ", "["],
   ["ो", "f]"],
   ["ौ", "f}"],
   ["ं", "+"],
   ["ँ", "F"],
-  ["ः", ":"],
-  ["्", "\\"],
+  ["ः", "M"],
 
-  // Half consonants
+  // Consonants with virama (half letters) - Must be processed BEFORE solitary virama
+  ["फ्", "Km"],
+  ["फ", "km"],
   ["क्", "S"],
   ["ख्", "V"],
   ["ग्", "U"],
-  ["घ्", "W"],
+  ["घ्", "£"],
   ["ङ्", "ª\\"],
   ["च्", "R"],
   ["छ्", "R\\"],
   ["ज्", "H"],
-  ["झ्", "4"],
-  ["ञ्", "`\\"],
+  ["झ्", "¤"],
+  ["ञ्", "~"],
   ["ट्‍", "6\\"],
   ["ठ्‍", "7\\"],
   ["ड्‍", "8\\"],
@@ -105,7 +105,6 @@ export const unicodeToPreetiMap: [string, string][] = [
   ["ध्", "W"],
   ["न्", "G"],
   ["प्", "K"],
-  ["फ्", "M"],
   ["ब्", "A"],
   ["भ्", "E"],
   ["म्", "D"],
@@ -113,21 +112,24 @@ export const unicodeToPreetiMap: [string, string][] = [
   ["ल्", "N"],
   ["व्", "J"],
   ["श्", "Z"],
-  ["ष्", "if\\"],
+  ["ष्", "i\\"],
   ["स्", ":"],
   ["ह्", "X"],
+
+  // Solitary virama (only applied if not part of a recognized half-letter)
+  ["्", "\\"],
 
   // Full consonants
   ["क", "s"],
   ["ख", "v"],
   ["ग", "u"],
-  ["घ", "U"],
+  ["घ", "3"],
   ["ङ", "ª"],
   ["च", "r"],
-  ["छ", "R"],
+  ["छ", "5"],
   ["ज", "h"],
-  ["झ", "H"],
-  ["ञ", "~"],
+  ["झ", "´"],
+  ["ञ", "`"],
   ["ट", "6"],
   ["ठ", "7"],
   ["ड", "8"],
@@ -139,7 +141,6 @@ export const unicodeToPreetiMap: [string, string][] = [
   ["ध", "w"],
   ["न", "g"],
   ["प", "k"],
-  ["फ", "m"],
   ["ब", "a"],
   ["भ", "e"],
   ["म", "d"],
@@ -177,41 +178,107 @@ export function convertUnicodeToPreeti(input: string): string {
 
   let text = input;
 
-  // 1. Compound glyph replacements
+  // 1. Pre-process special complex ligatures
+  text = text.replace(/क्र/g, "qm");
+  text = text.replace(/क्त/g, "Qm");
+  text = text.replace(/झ/g, "´");
   text = text.replace(/त्र/g, "q");
   text = text.replace(/ज्ञ/g, "1");
   text = text.replace(/श्र/g, ">");
   text = text.replace(/ऋ/g, "C");
-  text = text.replace(/ॐ/g, "cf‘");
+  text = text.replace(/ॐ/g, "ç");
 
-  // 2. R-Akar (consonant + virama + ra)
+  // Word-final halanta Sa (स्) in words like गर्नुहोस्, लिनुहोस् => complete Sa with halanta (;\)
+  text = text.replace(/स्(?=[\s\.,।?!;:()_\"'\n\r\t]|$)/g, ";\\");
+  // Sa before consonants in conjuncts (नमस्ते, स्थान, स्वास्थ्य) => half-Sa (:)
+  text = text.replace(/स्(?=[क-ह])/g, ":");
+
+  // 2. R-Akar combinations (consonant + virama + ra => consonant + | or ^)
   text = text.replace(/([कखगघचछजझटठडढणतथदधनपफबभमयरलवशषसह])्\u0930/g, "$1|");
-  text = text.replace(/([टठडढ])\|/g, "$1^");
+  text = text.replace(/([टठडढ])\|/g, "$1«");
 
   // 3. Reph handling (र + ् + consonant => consonant + {)
   const rephRegex = /र्([क-ह](?:्[क-ह])?)/g;
   text = text.replace(rephRegex, "$1{");
 
   // 4. Hraswa I-kar (ि) repositioning
-  const ikarRegex = /((?:[क-ह]्)*[क-ह](?:\||\^)?(?:\{)?)ि/g;
+  // 4a. Complex ligatures: e.g. त्रि (qि -> lq), क्रि (qmि -> lqm), क्ति (Qmि -> lQm), श्रि (>ि -> l>), ज्ञि (1ि -> l1)
+  text = text.replace(/((?:[क-ह]्)*)([q1>]|qm|Qm|´)ि/g, "l$1$2");
+
+  // 4b. Standard consonant clusters: [consonants + viramas] + consonant + ि => l + [cluster]
+  const ikarRegex = /((?:[क-ह]्)*[क-ह](?:\||«)?(?:\{)?)ि/g;
   text = text.replace(ikarRegex, "l$1");
 
   // 5. E-kar and AI-kar
   text = text.replace(/े/g, "]");
   text = text.replace(/ै/g, "}");
 
-  // 6. Direct Character Mapping
+  // 6. Direct Character Mapping (order matters: longer strings first)
   for (const [uni, preeti] of unicodeToPreetiMap) {
     if (uni.length > 0) {
       text = text.replaceAll(uni, preeti);
     }
   }
 
-  // 7. Cleanup spacing artifacts
+  // 7. Spacing cleanups
   text = text.replace(/l\s+/g, "l");
 
   return text;
 }
+
+// Preeti character map to Unicode
+const PREETI_CHAR_MAP: { [k: string]: string } = {
+  "v": "ख", "r": "च", "\"": "ू", "~": "ञ्", "z": "श", "ç": "ॐ", "f": "ा", "b": "द", "n": "ल", "j": "व",
+  "V": "ख्", "R": "च्", "ß": "द्म", "^": "६", "Û": "!", "Z": "श्", "F": "ँ", "B": "द्य", "N": "ल्",
+  "Ë": "ङ्ग", "J": "व्", "6": "ट", "2": "द्द", "¿": "रू", ">": "श्र", ":": ":", "§": "ट्ट", "&": "७",
+  "£": "घ्", "•": "ड्ड", ".": ".", "«": "्र", "*": "८", "„": "ध्र", "w": "ध", "s": "क", "g": "न",
+  "æ": "“", "c": "अ", "o": "य", "k": "प", "W": "ध्", "Ö": "=", "S": "क्", "Ò": "¨", "_": ")", "[": "ृ",
+  "Ú": "’", "G": "न्", "ˆ": "फ्", "C": "ऋ", "O": "इ", "Î": "ङ्ख", "K": "प्", "7": "ठ", "¶": "ठ्ठ", "3": "घ",
+  "9": "ढ", "?": "?", ";": "स", "'": "ु", "#": "३", "¢": "द्घ", "/": "र", "+": "ं", "ª": "ङ", "t": "त",
+  "p": "उ", "|": "्र", "x": "ह", "å": "द्व", "d": "म", "`": "ञ", "l": "ि", "h": "ज", "T": "त्", "P": "ए",
+  "Ý": "ट्ठ", "\\": "्", "Ù": ";", "X": "ह्", "Å": "हृ", "D": "म्", "@": "२", "Í": "ङ्क", "L": "ी",
+  "H": "ज्", "4": "द्ध", "±": "+", "0": "ण्", "<": "?", "8": "ड", "¥": "र्‍", "$": "४", "¡": "ज्ञ्",
+  ",": ",", "©": "र", "(": "(", "‘": "ॅ", "u": "ग", "q": "त्र", "}": "ै", "y": "थ", "e": "भ", "a": "ब",
+  "i": "ष्", "‰": "झ्", "U": "ग्", "Q": "त्त", "]": "े", "˜": "ऽ", "Y": "थ्", "Ø": "्य", "E": "भ्",
+  "A": "ब्", "M": "ः", "Ì": "न्न", "I": "क्ष्", "5": "छ", "´": "झ", "1": "ज्ञ", "°": "ङ्ढ", "=": "=",
+  "Æ": "”", "‹": "ङ्घ", "%": "५", "¤": "झ्", "!": "१", "-": "-", "›": "द्र", ")": ")", "…": "‘", "Ü": "%"
+};
+
+const PREETI_POST_RULES: [string, string][] = [
+  ["्ा", ""],
+  ["(त्र|त्त)([^उभप]+?)m", "$1m$2"],
+  ["त्रm", "क्र"],
+  ["त्तm", "क्त"],
+  ["([^उभप]+?)m", "m$1"],
+  ["उm", "ऊ"],
+  ["भm", "झ"],
+  ["पm", "फ"],
+  ["प्m", "फ्"],
+  ["इ{", "ई"],
+  ["ि((.्)*[^्])", "$1ि"],
+  ["(.[ािीुूृेैोौंःँ]*?){", "{$1"],
+  ["((.्)*){", "{$1"],
+  ["{", "र्"],
+  ["([ाीुूृेैोौंःँ]+?)(्(.्)*[^्])", "$2$1"],
+  ["्([ाीुूृेैोौंःँ]+?)((.्)*[^्])", "्$2$1"],
+  ["([ंँ])([ािीुूृेैोौः]*)", "$2$1"],
+  ["ँँ", "ँ"],
+  ["ंं", "ं"],
+  ["ेे", "े"],
+  ["ैै", "ै"],
+  ["ुु", "ु"],
+  ["ूू", "ू"],
+  ["^ः", ":"],
+  ["टृ", "ट्ट"],
+  ["ेा", "ाे"],
+  ["ैा", "ाै"],
+  ["अाे", "ओ"],
+  ["अाै", "औ"],
+  ["अा", "आ"],
+  ["एे", "ऐ"],
+  ["ाे", "ो"],
+  ["ाै", "ौ"]
+];
 
 /**
  * Convert Preeti font text to Unicode Nepali
@@ -221,160 +288,24 @@ export function convertPreetiToUnicode(input: string): string {
 
   let text = input;
 
-  // 1. Standardize common ligatures & alt symbols
-  text = text.replace(/±/g, "Z+");
-  text = text.replace(/Æ/g, "ª\\u");
-  text = text.replace(/æ/g, "ª\\s");
-  text = text.replace(/Ø/g, "i6");
-  text = text.replace(/È/g, "i7");
-  text = text.replace(/÷/g, "द्म");
-  text = text.replace(/å/g, "द्द");
-  text = text.replace(/Þ/g, "द्य");
-  text = text.replace(/Í/g, "द्ध");
-  text = text.replace(/~/g, "ञ");
-  text = text.replace(/`\\/g, "ञ्");
-  text = text.replace(/`/g, "ञ्");
-  text = text.replace(/Tt/g, "त्त");
-  text = text.replace(/Ts/g, "त्क");
-  text = text.replace(/If\\/g, "क्ष्");
-  text = text.replace(/If/g, "क्ष");
-  text = text.replace(/1\\/g, "ज्ञ्");
-  text = text.replace(/1/g, "ज्ञ");
-  text = text.replace(/q\\/g, "त्र्");
-  text = text.replace(/q/g, "त्र");
-  text = text.replace(/>/g, "श्र");
-  text = text.replace(/2/g, "द्ध");
-  text = text.replace(/\?/g, "रु");
-  text = text.replace(/r"/g, "रू");
+  // 1. Conjunct half-Sa ':' only appears immediately preceding a letter (e.g. :t -> स्त, :y -> स्थ, :j -> स्व, :k -> स्प)
+  // Standalone ':' or ':' followed by space or punctuation remains ':'
+  text = text.replace(/:([a-zA-Z])/g, "स्$1");
 
-  // 2. Retroflex ra-akar
-  text = text.replace(/6\^/g, "ट्र");
-  text = text.replace(/7\^/g, "ठ्र");
-  text = text.replace(/8\^/g, "ड्र");
-  text = text.replace(/9\^/g, "ढ्र");
+  // 2. Preeti '?' is Ru only when followed by a letter (e.g. ?k -> रुप, ?lkof -> रुपिया)
+  // Standalone '?' remains '?'
+  text = text.replace(/\?([a-zA-Z])/g, "रु$1");
 
-  // 3. Reph repositioning: '{' comes after consonant in Preeti, but in Devanagari it's 'र्' BEFORE consonant
-  // e.g. s{ => र्क
-  text = text.replace(/([a-zA-Z0-9~`_]+)\{/g, "#REPH#$1");
-
-  // 4. I-kar repositioning: 'l' comes BEFORE consonant in Preeti, but in Devanagari 'ि' comes AFTER consonant
-  // Handle single consonant (e.g. ls => कि) or conjuncts (e.g. l:t => स्ति, lk| => प्रि)
-  text = text.replace(/l([A-Z:;]?[a-zA-Z~`_\|]+)/g, "$1#IKAR#");
-
-  // 5. Ra-akar mapping
-  text = text.replace(/([a-zA-Z])\|/g, "$1्\u0930");
-
-  // 6. Multi-character vowels & symbols
-  const preetiToUniPairs: [string, string][] = [
-    ["cf‘", "ॐ"],
-    ["cf}", "औ"],
-    ["cf]", "ओ"],
-    ["cf", "आ"],
-    ["c+", "अं"],
-    ["cF", "अँ"],
-    ["c", "अ"],
-    ["O{", "ई"],
-    ["O", "इ"],
-    ["pm", "ऊ"],
-    ["p", "उ"],
-    ["P]", "ऐ"],
-    ["P", "ए"],
-    ["C", "ऋ"],
-
-    ["f]", "ो"],
-    ["f}", "ौ"],
-    ["f", "ा"],
-    ["L", "ी"],
-    ["'", "ु"],
-    ['"', "ू"],
-    ["]", "े"],
-    ["}", "ै"],
-    ["+", "ं"],
-    ["F", "ँ"],
-    [":", "स्"],
-    ["\\", "्"],
-    [".", "।"],
-
-    // Half consonants (Shift keys)
-    ["S", "क्"],
-    ["V", "ख्"],
-    ["U", "घ्"],
-    ["W", "ध्"],
-    ["R", "छ्"],
-    ["H", "झ्"],
-    ["0", "ण्"],
-    ["T", "त्"],
-    ["Y", "थ्"],
-    ["b\\", "द्"],
-    ["G", "न्"],
-    ["K", "प्"],
-    ["M", "फ्"],
-    ["A", "ब्"],
-    ["E", "भ्"],
-    ["D", "म्"],
-    ["N", "ल्"],
-    ["J", "व्"],
-    ["Z", "श्"],
-    ["i", "ष"],
-    ["X", "ह्"],
-
-    // Full consonants
-    ["s", "क"],
-    ["v", "ख"],
-    ["u", "ग"],
-    ["ª", "ङ"],
-    ["r", "च"],
-    ["h", "ज"],
-    ["6", "ट"],
-    ["7", "ठ"],
-    ["8", "ड"],
-    ["9", "ढ"],
-    ["t", "त"],
-    ["y", "थ"],
-    ["b", "द"],
-    ["w", "ध"],
-    ["g", "न"],
-    ["k", "प"],
-    ["m", "फ"],
-    ["a", "ब"],
-    ["e", "भ"],
-    ["d", "म"],
-    ["o", "य"],
-    ["/", "र"],
-    ["n", "ल"],
-    ["j", "व"],
-    ["z", "श"],
-    [";", "स"],
-    ["x", "ह"],
-
-    // Digits
-    [")", "०"],
-    ["!", "१"],
-    ["@", "२"],
-    ["#", "३"],
-    ["$", "४"],
-    ["%", "५"],
-    ["^", "६"],
-    ["&", "७"],
-    ["*", "८"],
-    ["(", "९"],
-  ];
-
-  for (const [preeti, uni] of preetiToUniPairs) {
-    text = text.replaceAll(preeti, uni);
+  let output = "";
+  for (let w = 0; w < text.length; w++) {
+    output += PREETI_CHAR_MAP[text[w]] || text[w];
   }
 
-  // 7. Place #IKAR# and #REPH#
-  text = text.replace(/#IKAR#/g, "ि");
-  text = text.replace(/#REPH#/g, "र्");
+  for (let r = 0; r < PREETI_POST_RULES.length; r++) {
+    output = output.replace(new RegExp(PREETI_POST_RULES[r][0], "g"), PREETI_POST_RULES[r][1]);
+  }
 
-  // 8. Fix common grammatical anomalies
-  text = text.replace(/्+/g, "्");
-  text = text.replace(/ाे/g, "ो");
-  text = text.replace(/ाै/g, "ौ");
-  text = text.replace(/स\s*्/g, "स्");
-
-  return text;
+  return output;
 }
 
 /**
@@ -394,13 +325,13 @@ export function detectTextType(text: string): "unicode-to-preeti" | "preeti-to-u
 }
 
 /**
- * Text utility helpers
+ * Clean text helper
  */
 export function cleanNepaliText(text: string): string {
   if (!text) return "";
   return text
-    .replace(/[ \t]+/g, " ") // normalize spaces
-    .replace(/\n\s*\n\s*\n/g, "\n\n") // remove excessive newlines
-    .replace(/\s+([।?,.])/g, "$1") // fix space before punctuation
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n\s*\n\s*\n/g, "\n\n")
+    .replace(/\s+([।?,.])/g, "$1")
     .trim();
 }
