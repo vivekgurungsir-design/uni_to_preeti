@@ -25,13 +25,10 @@ export default function TranslatorPane({
   onOpenVirtualKeyboard,
   injectedText,
 }: TranslatorPaneProps) {
-  const INITIAL_SOURCE = "नेपाल एक सुन्दर देश हो । Supabase र Next.js मा Antigravity AI प्रयोग गर्नुहोस् ।";
-  const initialMixed = convertMixedText(INITIAL_SOURCE, "unicode-to-preeti");
-
   const [mode, setMode] = useState<"unicode-to-preeti" | "preeti-to-unicode">("unicode-to-preeti");
-  const [sourceText, setSourceText] = useState(INITIAL_SOURCE);
-  const [convertedText, setConvertedText] = useState(initialMixed.convertedText);
-  const [segments, setSegments] = useState<MixedSegment[]>(initialMixed.segments);
+  const [sourceText, setSourceText] = useState("");
+  const [convertedText, setConvertedText] = useState("");
+  const [segments, setSegments] = useState<MixedSegment[]>([]);
   const [viewMode, setViewMode] = useState<"visual" | "raw">("visual");
   const [copied, setCopied] = useState(false);
 
