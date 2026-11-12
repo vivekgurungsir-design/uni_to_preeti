@@ -192,7 +192,7 @@ export function convertUnicodeToPreeti(input: string): string {
   // (before space, punctuation, or end of string) must be rendered as the full letter with halanta (e.g. छन् -> 5g\, गर्नुहोस् -> ug'{xf];\)
   // instead of incomplete hanging half-letters (like G or :) which only belong inside conjuncts before consonants.
   const endBoundary = "(?=[\\s\\.,।?!;:()_\"'—–\\-\\[\\]\\{\\}\\/\\\\<>]|$)";
-  const endBoundaryRegex = (char: string) => new RegExp(`${char}्${endBoundary}`, "g");
+  const endBoundaryRegex = (char: string) => new RegExp(`${char}${endBoundary}`, "g");
 
   text = text.replace(endBoundaryRegex("न्"), "g\\");
   text = text.replace(endBoundaryRegex("स्"), ";\\");
