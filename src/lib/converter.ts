@@ -188,8 +188,33 @@ export function convertUnicodeToPreeti(input: string): string {
   text = text.replace(/ऋ/g, "C");
   text = text.replace(/ॐ/g, "ç");
 
-  // Word-final halanta Sa (स्) in words like गर्नुहोस्, लिनुहोस् => complete Sa with halanta (;\)
-  text = text.replace(/स्(?=[\s\.,।?!;:()_\"'\n\r\t]|$)/g, ";\\");
+  // Word-final halanta handling: in Nepali, a consonant with halanta at the end of a word
+  // (before space, punctuation, or end of string) must be rendered as the full letter with halanta (e.g. छन् -> 5g\, गर्नुहोस् -> ug'{xf];\)
+  // instead of incomplete hanging half-letters (like G or :) which only belong inside conjuncts before consonants.
+  const endBoundary = "(?=[\\s\\.,।?!;:()_\"'—–\\-\\[\\]\\{\\}\\/\\\\<>]|$)";
+  const endBoundaryRegex = (char: string) => new RegExp(`${char}्${endBoundary}`, "g");
+
+  text = text.replace(endBoundaryRegex("न्"), "g\\");
+  text = text.replace(endBoundaryRegex("स्"), ";\\");
+  text = text.replace(endBoundaryRegex("त्"), "t\\");
+  text = text.replace(endBoundaryRegex("म्"), "d\\");
+  text = text.replace(endBoundaryRegex("क्"), "s\\");
+  text = text.replace(endBoundaryRegex("द्"), "b\\");
+  text = text.replace(endBoundaryRegex("ल्"), "n\\");
+  text = text.replace(endBoundaryRegex("प्"), "k\\");
+  text = text.replace(endBoundaryRegex("ब्"), "a\\");
+  text = text.replace(endBoundaryRegex("थ्"), "y\\");
+  text = text.replace(endBoundaryRegex("ध्"), "w\\");
+  text = text.replace(endBoundaryRegex("भ्"), "e\\");
+  text = text.replace(endBoundaryRegex("च्"), "r\\");
+  text = text.replace(endBoundaryRegex("ज्"), "h\\");
+  text = text.replace(endBoundaryRegex("ग्"), "u\\");
+  text = text.replace(endBoundaryRegex("ख्"), "v\\");
+  text = text.replace(endBoundaryRegex("घ्"), "3\\");
+  text = text.replace(endBoundaryRegex("श्"), "z\\");
+  text = text.replace(endBoundaryRegex("ष्"), "i\\");
+  text = text.replace(endBoundaryRegex("ह्"), "x\\");
+
   // Sa before consonants in conjuncts (नमस्ते, स्थान, स्वास्थ्य) => half-Sa (:)
   text = text.replace(/स्(?=[क-ह])/g, ":");
 
