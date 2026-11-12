@@ -30,7 +30,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ne" suppressHydrationWarning>
-      <body className="min-h-screen text-slate-900 antialiased selection:bg-emerald-500 selection:text-white">
+      <body
+        suppressHydrationWarning
+        className="min-h-screen text-slate-900 antialiased selection:bg-emerald-500 selection:text-white"
+      >
         {children}
       </body>
     </html>
