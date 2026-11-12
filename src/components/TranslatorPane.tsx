@@ -131,13 +131,13 @@ export default function TranslatorPane({
   const englishCount = segments.filter((s) => s.isEnglish).length;
 
   return (
-    <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 py-6">
+    <div className="w-full max-w-6xl mx-auto px-3 sm:px-6 py-4 sm:py-6">
       {/* Top Simple Mode Switcher */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <div className="inline-flex p-1 bg-white/90 backdrop-blur border border-emerald-200/80 rounded-2xl shadow-sm">
           <button
             onClick={() => handleModeChange("unicode-to-preeti")}
-            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
+            className={`px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
               mode === "unicode-to-preeti"
                 ? "bg-emerald-600 text-white shadow"
                 : "text-slate-600 hover:text-slate-900"
@@ -147,7 +147,7 @@ export default function TranslatorPane({
           </button>
           <button
             onClick={() => handleModeChange("preeti-to-unicode")}
-            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
+            className={`px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
               mode === "preeti-to-unicode"
                 ? "bg-emerald-600 text-white shadow"
                 : "text-slate-600 hover:text-slate-900"
@@ -161,7 +161,7 @@ export default function TranslatorPane({
           {/* Swap Button */}
           <button
             onClick={handleSwap}
-            className="p-2.5 rounded-2xl bg-white hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 border border-emerald-200 shadow-sm transition active:scale-95"
+            className="p-2 sm:p-2.5 rounded-2xl bg-white hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 border border-emerald-200 shadow-sm transition active:scale-95"
             title="दिशा बदल्नुहोस्"
           >
             <ArrowLeftRight className="w-4 h-4 text-emerald-700" />
@@ -170,7 +170,7 @@ export default function TranslatorPane({
           {onOpenVirtualKeyboard && (
             <button
               onClick={onOpenVirtualKeyboard}
-              className="px-3.5 py-2 rounded-2xl bg-white hover:bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-semibold shadow-sm transition hidden sm:inline-block"
+              className="px-3 sm:px-3.5 py-2 rounded-2xl bg-white hover:bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-semibold shadow-sm transition hidden sm:inline-block"
             >
               भर्चुअल किबोर्ड
             </button>
@@ -179,11 +179,11 @@ export default function TranslatorPane({
       </div>
 
       {/* Main Dual Box Layout */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
         {/* ================= LEFT BOX (INPUT) ================= */}
         <div className="flex flex-col bg-white rounded-3xl border border-emerald-200 shadow-sm overflow-hidden focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/20 transition-all">
           {/* Header */}
-          <div className="px-5 py-3.5 bg-emerald-50/40 border-b border-emerald-100 flex items-center justify-between">
+          <div className="px-4 sm:px-5 py-3 sm:py-3.5 bg-emerald-50/40 border-b border-emerald-100 flex items-center justify-between">
             <span className="font-bold text-sm text-slate-800">
               {mode === "unicode-to-preeti" ? "युनिकोड इनपुट" : "प्रिती इनपुट"}
             </span>
@@ -210,7 +210,7 @@ export default function TranslatorPane({
           </div>
 
           {/* Textarea */}
-          <div className="relative flex-1 min-h-[340px]">
+          <div className="relative flex-1 min-h-[260px] sm:min-h-[340px]">
             <textarea
               value={sourceText}
               onChange={handleInputChange}
@@ -219,14 +219,14 @@ export default function TranslatorPane({
                   ? "यहाँ नेपाली युनिकोड टाइप गर्नुहोस्..."
                   : "यहाँ प्रिती टेक्स्ट टाइप गर्नुहोस्..."
               }
-              className={`w-full h-full p-5 bg-transparent text-slate-900 placeholder-slate-400 focus:outline-none resize-none text-base sm:text-lg leading-relaxed ${
+              className={`w-full h-full p-4 sm:p-5 bg-transparent text-slate-900 placeholder-slate-400 focus:outline-none resize-none text-base sm:text-lg leading-relaxed ${
                 mode === "unicode-to-preeti" ? "font-devanagari" : "font-mono"
               }`}
             />
           </div>
 
           {/* Footer Stats */}
-          <div className="px-5 py-2.5 bg-emerald-50/20 border-t border-emerald-100 flex items-center justify-between text-xs text-slate-500">
+          <div className="px-4 sm:px-5 py-2.5 bg-emerald-50/20 border-t border-emerald-100 flex items-center justify-between text-xs text-slate-500">
             <span>वर्ण: {sourceStats.characters} | शब्द: {sourceStats.words}</span>
           </div>
         </div>
@@ -234,18 +234,18 @@ export default function TranslatorPane({
         {/* ================= RIGHT BOX (CONVERTED OUTPUT) ================= */}
         <div className="flex flex-col bg-white rounded-3xl border border-emerald-200 shadow-sm overflow-hidden focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/20 transition-all">
           {/* Header */}
-          <div className="px-5 py-3.5 bg-emerald-50/40 border-b border-emerald-100 flex items-center justify-between">
+          <div className="px-4 sm:px-5 py-3 sm:py-3.5 bg-emerald-50/40 border-b border-emerald-100 flex flex-wrap items-center justify-between gap-2">
             <span className="font-bold text-sm text-slate-800">
               {mode === "unicode-to-preeti" ? "प्रिती नतिजा" : "युनिकोड नतिजा"}
             </span>
 
             {/* Actions: View Toggle, Download, Copy */}
-            <div className="flex items-center space-x-1.5">
+            <div className="flex items-center space-x-1 sm:space-x-1.5">
               {/* View Toggle */}
-              <div className="flex items-center space-x-1 bg-white rounded-lg p-0.5 border border-emerald-200 mr-1">
+              <div className="flex items-center space-x-0.5 sm:space-x-1 bg-white rounded-lg p-0.5 border border-emerald-200 mr-0.5 sm:mr-1">
                 <button
                   onClick={() => setViewMode("visual")}
-                  className={`flex items-center space-x-1 px-2 py-0.5 rounded text-[11px] font-semibold transition ${
+                  className={`flex items-center space-x-1 px-1.5 sm:px-2 py-0.5 rounded text-[11px] font-semibold transition ${
                     viewMode === "visual"
                       ? "bg-emerald-600 text-white shadow-xs"
                       : "text-slate-600 hover:text-slate-900"
@@ -257,7 +257,7 @@ export default function TranslatorPane({
                 </button>
                 <button
                   onClick={() => setViewMode("raw")}
-                  className={`flex items-center space-x-1 px-2 py-0.5 rounded text-[11px] font-semibold transition ${
+                  className={`flex items-center space-x-1 px-1.5 sm:px-2 py-0.5 rounded text-[11px] font-semibold transition ${
                     viewMode === "raw"
                       ? "bg-emerald-600 text-white shadow-xs"
                       : "text-slate-600 hover:text-slate-900"

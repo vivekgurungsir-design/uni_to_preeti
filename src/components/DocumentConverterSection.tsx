@@ -283,7 +283,7 @@ export default function DocumentConverterSection() {
 
               {/* Converted Document Preview */}
               <div className="flex flex-col rounded-2xl border border-emerald-300 bg-white overflow-hidden shadow-inner">
-                <div className="px-4 py-2.5 bg-emerald-100/60 border-b border-emerald-200 text-xs font-bold text-emerald-900 flex justify-between items-center">
+                <div className="px-3 sm:px-4 py-2.5 bg-emerald-100/60 border-b border-emerald-200 text-xs font-bold text-emerald-900 flex flex-wrap justify-between items-center gap-2">
                   <span>रूपान्तरित नतिजा (Converted)</span>
                   
                   {/* View Mode Toggle: Visual vs Raw */}
