@@ -68,16 +68,16 @@ export default function VirtualKeyboard({
                   <button
                     key={item.code}
                     onClick={() => onKeyPress(displayChar)}
-                    className="kbd-key group relative flex flex-col items-center justify-between min-w-[34px] sm:min-w-[48px] h-12 sm:h-14 p-1 rounded-md bg-white dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 border border-slate-200 dark:border-slate-700 active:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    className="kbd-key group relative flex flex-col items-center justify-between min-w-[22px] xs:min-w-[26px] sm:min-w-[44px] md:min-w-[48px] h-11 sm:h-14 p-0.5 sm:p-1 rounded-md bg-white dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 border border-slate-200 dark:border-slate-700 active:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-colors"
                     title={`Key: ${keyLetter} | Preeti: ${preetiChar} | Devanagari: ${displayChar}`}
                   >
-                    <span className="text-[10px] sm:text-xs font-mono text-slate-400 dark:text-slate-500 self-start">
+                    <span className="text-[8px] sm:text-xs font-mono text-slate-400 dark:text-slate-500 self-start">
                       {keyLetter}
                     </span>
-                    <span className="font-devanagari text-base sm:text-lg font-bold text-slate-800 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
+                    <span className="font-devanagari text-xs sm:text-lg font-bold text-slate-800 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
                       {displayChar}
                     </span>
-                    <span className="text-[9px] text-slate-400 dark:text-slate-500 font-mono">
+                    <span className="text-[7px] sm:text-[9px] text-slate-400 dark:text-slate-500 font-mono hidden xs:inline sm:inline">
                       {preetiChar}
                     </span>
                   </button>
