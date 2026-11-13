@@ -19,7 +19,8 @@ export function calculateStats(text: string): ConversionStats {
 // Ordered Unicode to Preeti Mapping Array
 export const unicodeToPreetiMap: [string, string][] = [
   // Compound conjuncts & special characters
-  ["द्ध", "2"],
+  ["द्ध", "4"],
+  ["द्घ", "¢"],
   ["द्व", "å"],
   ["द्य", "B"],
   ["द्द", "2"],
@@ -187,6 +188,12 @@ export function convertUnicodeToPreeti(input: string): string {
   text = text.replace(/श्र/g, ">");
   text = text.replace(/ऋ/g, "C");
   text = text.replace(/ॐ/g, "ç");
+  text = text.replace(/द्ध/g, "4");
+  text = text.replace(/द्द/g, "2");
+  text = text.replace(/द्घ/g, "¢");
+  text = text.replace(/द्म/g, "ß");
+  text = text.replace(/द्व/g, "å");
+  text = text.replace(/द्य/g, "B");
 
   // Word-final halanta handling: in Nepali, a consonant with halanta at the end of a word
   // (before space, punctuation, or end of string) must be rendered as the full letter with halanta (e.g. छन् -> 5g\, गर्नुहोस् -> ug'{xf];\)
@@ -227,8 +234,8 @@ export function convertUnicodeToPreeti(input: string): string {
   text = text.replace(rephRegex, "$1{");
 
   // 4. Hraswa I-kar (ि) repositioning
-  // 4a. Complex ligatures: e.g. त्रि (qि -> lq), क्रि (qmि -> lqm), क्ति (Qmि -> lQm), श्रि (>ि -> l>), ज्ञि (1ि -> l1)
-  text = text.replace(/((?:[क-ह]्)*)([q1>]|qm|Qm|´)ि/g, "l$1$2");
+  // 4a. Complex ligatures: e.g. त्रि (qि -> lq), क्रि (qmि -> lqm), क्ति (Qmि -> lQm), श्रि (>ि -> l>), ज्ञि (1ि -> l1), द्धि (4ि -> l4)
+  text = text.replace(/((?:[क-ह]्)*)([q1>]|qm|Qm|´|[24åBß¢])ि/g, "l$1$2");
 
   // 4b. Standard consonant clusters: [consonants + viramas] + consonant + ि => l + [cluster]
   const ikarRegex = /((?:[क-ह]्)*[क-ह](?:\||«)?(?:\{)?)ि/g;
