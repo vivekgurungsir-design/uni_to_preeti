@@ -32,14 +32,18 @@ export const unicodeToPreetiMap: [string, string][] = [
   ["श्च", "Zr"],
   ["श्न", "Zg"],
   ["श्व", "Zj"],
-  ["ष्ट", "i6"],
+  ["ष्ट्र", "i6«"],
   ["ष्ठ", "i7"],
+  ["ष्ट", "i6"],
+  ["स्त्र", ":q"],
+  ["न्त्र", "Gq"],
   ["ह्र", "x|"],
   ["ह्न", "xg"],
   ["ह्म", "xd"],
   ["ह्य", "xo"],
   ["ह्ल", "xn"],
   ["ह्व", "xj"],
+  ["श्रृ", ">["],
   ["श्र", ">"],
   ["त्त", "Q"],
   ["त्क", "Ts"],
@@ -113,7 +117,7 @@ export const unicodeToPreetiMap: [string, string][] = [
   ["ल्", "N"],
   ["व्", "J"],
   ["श्", "Z"],
-  ["ष्", "i\\"],
+  ["ष्", "i"],
   ["स्", ":"],
   ["ह्", "X"],
 
@@ -150,7 +154,7 @@ export const unicodeToPreetiMap: [string, string][] = [
   ["ल", "n"],
   ["व", "j"],
   ["श", "z"],
-  ["ष", "i"],
+  ["ष", "if"],
   ["स", ";"],
   ["ह", "x"],
 
@@ -185,8 +189,10 @@ export function convertUnicodeToPreeti(input: string): string {
   text = text.replace(/झ/g, "´");
   text = text.replace(/त्र/g, "q");
   text = text.replace(/ज्ञ/g, "1");
+  text = text.replace(/श्रृ/g, ">[");
   text = text.replace(/श्र/g, ">");
   text = text.replace(/ऋ/g, "C");
+  text = text.replace(/ॠ/g, "C");
   text = text.replace(/ॐ/g, "ç");
   text = text.replace(/द्ध/g, "4");
   text = text.replace(/द्द/g, "2");
@@ -194,6 +200,15 @@ export function convertUnicodeToPreeti(input: string): string {
   text = text.replace(/द्म/g, "ß");
   text = text.replace(/द्व/g, "å");
   text = text.replace(/द्य/g, "B");
+  text = text.replace(/स्त्र/g, ":q");
+  text = text.replace(/न्त्र/g, "Gq");
+  text = text.replace(/ष्ट्र/g, "i6«");
+  text = text.replace(/ष्ठ/g, "i7");
+  text = text.replace(/ष्ट/g, "i6");
+
+  // Double-ra with aa-kar (र्रा in अन्तर्राष्ट्रिय)
+  text = text.replace(/र\u094dरा/g, "/f{");
+  text = text.replace(/र\u094dर/g, "/{");
 
   // Word-final halanta handling: in Nepali, a consonant with halanta at the end of a word
   // (before space, punctuation, or end of string) must be rendered as the full letter with halanta (e.g. छन् -> 5g\, गर्नुहोस् -> ug'{xf];\)
@@ -219,23 +234,24 @@ export function convertUnicodeToPreeti(input: string): string {
   text = text.replace(endBoundaryRegex("ख्"), "v\\");
   text = text.replace(endBoundaryRegex("घ्"), "3\\");
   text = text.replace(endBoundaryRegex("श्"), "z\\");
-  text = text.replace(endBoundaryRegex("ष्"), "i\\");
+  text = text.replace(endBoundaryRegex("ष्"), "if\\");
   text = text.replace(endBoundaryRegex("ह्"), "x\\");
+
+  // 2. Subjoined R-Akar combinations (consonant + virama + ra => consonant + | or «)
+  // Must run BEFORE Sa-conjunct rule so that स्र becomes स|
+  text = text.replace(/([कखगघचछजझटठडढणतथदधनपफबभमयरलवशषसह])्\u0930/g, "$1|");
+  text = text.replace(/([टठडढ])\|/g, "$1«");
 
   // Sa before consonants in conjuncts (नमस्ते, स्थान, स्वास्थ्य) => half-Sa (:)
   text = text.replace(/स्(?=[क-ह])/g, ":");
 
-  // 2. R-Akar combinations (consonant + virama + ra => consonant + | or ^)
-  text = text.replace(/([कखगघचछजझटठडढणतथदधनपफबभमयरलवशषसह])्\u0930/g, "$1|");
-  text = text.replace(/([टठडढ])\|/g, "$1«");
-
-  // 3. Reph handling (र + ् + consonant => consonant + {)
-  const rephRegex = /र्([क-ह](?:्[क-ह])?)/g;
+  // 3. Reph handling (र + ् + consonant/cluster => consonant + {)
+  const rephRegex = /र्([क-ह](?:[्|«][क-ह])?)/g;
   text = text.replace(rephRegex, "$1{");
 
   // 4. Hraswa I-kar (ि) repositioning
-  // 4a. Complex ligatures: e.g. त्रि (qि -> lq), क्रि (qmि -> lqm), क्ति (Qmि -> lQm), श्रि (>ि -> l>), ज्ञि (1ि -> l1), द्धि (4ि -> l4)
-  text = text.replace(/((?:[क-ह]्)*)([q1>]|qm|Qm|´|[24åBß¢])ि/g, "l$1$2");
+  // 4a. Complex ligatures: e.g. त्रि (qि -> lq), क्रि (qmि -> lqm), क्ति (Qmि -> lQm), श्रि (>ि -> l>), ज्ञि (1ि -> l1), द्धि (4ि -> l4), ष्ट्रि (i6«ि -> li6«)
+  text = text.replace(/((?:[क-ह]्)*)([q1>]|qm|Qm|´|[24åBß¢]|i6«|i[67]|:q|Gq)ि/g, "l$1$2");
 
   // 4b. Standard consonant clusters: [consonants + viramas] + consonant + ि => l + [cluster]
   const ikarRegex = /((?:[क-ह]्)*[क-ह](?:\||«)?(?:\{)?)ि/g;
@@ -320,13 +336,28 @@ export function convertPreetiToUnicode(input: string): string {
 
   let text = input;
 
-  // 1. Conjunct half-Sa ':' only appears immediately preceding a letter (e.g. :t -> स्त, :y -> स्थ, :j -> स्व, :k -> स्प)
+  // 1. Pre-process known multi-character ligatures
+  text = text.replace(/:q/g, "स्त्र");
+  text = text.replace(/Gq/g, "न्त्र");
+  text = text.replace(/i6«/g, "ष्ट्र");
+  text = text.replace(/i7/g, "ष्ठ");
+  text = text.replace(/i6/g, "ष्ट");
+  text = text.replace(/>\[/g, "श्रृ");
+  text = text.replace(/>\{/g, "श्रृ");
+  text = text.replace(/\/f\{/g, "र्रा");
+  text = text.replace(/\/\{/g, "र्र");
+
+  // 2. Conjunct half-Sa ':' only appears immediately preceding a letter (e.g. :t -> स्त, :y -> स्थ, :j -> स्व, :k -> स्प)
   // Standalone ':' or ':' followed by space or punctuation remains ':'
   text = text.replace(/:([a-zA-Z])/g, "स्$1");
 
-  // 2. Preeti '?' is Ru only when followed by a letter (e.g. ?k -> रुप, ?lkof -> रुपिया)
+  // 3. Preeti '?' is Ru when followed by a letter (रु)
   // Standalone '?' remains '?'
-  text = text.replace(/\?([a-zA-Z])/g, "रु$1");
+  text = text.replace(/\?([a-zA-Z]|\.)/g, "रु$1");
+
+  // Digit '०': Preeti maps Devanagari 0 to ')' (e.g. %)) -> ५००)
+  text = text.replace(/([!@#$%^&*])\)/g, "$1०");
+  text = text.replace(/([०-९])\)/g, "$1०");
 
   let output = "";
   for (let w = 0; w < text.length; w++) {
@@ -336,6 +367,14 @@ export function convertPreetiToUnicode(input: string): string {
   for (let r = 0; r < PREETI_POST_RULES.length; r++) {
     output = output.replace(new RegExp(PREETI_POST_RULES[r][0], "g"), PREETI_POST_RULES[r][1]);
   }
+
+  // 4. Preeti '.' is purna viram '।' when not between digits
+  output = output.replace(/\.{2,}/g, "॥");
+  output = output.replace(/(?<!\d)\.(?!\d)/g, "।");
+
+  // Restore currency & abbreviation patterns
+  output = output.replace(/रु।/g, "रु.");
+  output = output.replace(/र\-/g, "/-");
 
   return output;
 }
